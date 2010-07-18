@@ -360,7 +360,9 @@ class OpenID {
 		
 		// take default email
 		if($me['email'] === null) {
-			$me['email'] = sha1($me['identifier']).'@openid';
+			$host = parse_url($me['identifier'], PHP_URL_HOST);
+			$host = preg_replace("/^www\./", "", $host);
+			$me['email'] = md5($me['identifier']).'@openid.'.$host;
 		}
 
 		// create new user
