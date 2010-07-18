@@ -5,6 +5,7 @@
 		<eventlistener>
 			<eventclassname>UserLoginForm</eventclassname>
 			<eventname>assignVariables</eventname>
+			<inherit>1</inherit>
 			<listenerclassfile>lib/system/event/listener/UserLoginOpenIDListener.class.php</listenerclassfile>
 		</eventlistener>
 	</import>

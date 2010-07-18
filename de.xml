@@ -5,4 +5,9 @@
 		<item name="wcf.acp.option.module_openid"><![CDATA[openid]]></item>
 		<item name="wcf.acp.option.module_openid.description"><![CDATA[Erlaubt den Login mit Hilfe eines openid Accounts.]]></item>
 	</category>
+	<category name="wcf.openid">
+		<item name="wcf.openid.login.description"><![CDATA[Sie können sich mit ihrem existieren Account bestimmter Anbieter bei uns authentifizieren.<br/>
+			Das ganze funktioniert über die s.g. OpenID Schnittstelle - es werden keine Zugangsdaten ausgetauscht.<br/>]]></item>
+		<item name="wcf.openid.login"><![CDATA[OpenID]]></item>
+	</category>
 </language>

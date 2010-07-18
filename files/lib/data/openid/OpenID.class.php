@@ -1,20 +1,46 @@
 <?php
-require_once(WCF_DIR.'lib/data/user/avatar/AvatarEditor.class.php');
 require_once(WCF_DIR.'lib/data/user/UserEditor.class.php');
 
 /**
- *
+ * embeds the openid system into the wcf
+ * registers include pathes and cares for all dependencies
+ * 
+ * @author	Torben Brodt
+ * @copyright	2010 easy-coding.de
+ * @license	GNU General Public License <http://opensource.org/licenses/gpl-3.0.html>
+ * @package	de.easy-coding.wcf.openid
  */
 class OpenID {
 
 	/**
+	 * form instance needed for finish action
 	 *
+	 * @var UserLoginForm|OpenIDPage
 	 */
-	public function __construct() {
-		$path_extra = dirname(dirname(dirname(__FILE__)));
+	protected $eventObj;
+
+	/**
+	 * sets include pathes
+	 * 
+	 * @param	UserLoginForm|OpenIDPage	$eventObj
+	 */
+	public function __construct($eventObj = null) {
+		$this->eventObj = $eventObj;
+
+		$path_extra = dirname(__FILE__);
 		$path = ini_get('include_path');
 		$path = $path_extra . PATH_SEPARATOR . $path;
 		ini_set('include_path', $path);
+
+		/**
+		 * session wrapper
+		 */
+		require_once "Auth/Yadis/Manager.php";
+
+		/**
+		 * session wrapper
+		 */
+		require_once "OpenIDSession.class.php";
 
 		/**
 		 * Require the OpenID consumer code.
@@ -25,7 +51,7 @@ class OpenID {
 		 * Require the "file store" module, which we'll need to store
 		 * OpenID information.
 		 */
-		require_once "Auth/OpenID/DumbStore.php";
+		require_once "Auth/OpenID/FileStore.php";
 
 		/**
 		 * Require the Simple Registration extension API.
@@ -38,31 +64,51 @@ class OpenID {
 		require_once "Auth/OpenID/PAPE.php";
 	}
 
-	protected function &getStore() {
-		return new Auth_OpenID_DumbStore();
+	/**
+	 * returns file store
+	 */
+	protected function getStore() {
+		$store_path = FileUtil::getTemporaryFilename('openid_');
+		$store_path = TMP_DIR."/_openid".WCF_N;
+		return new Auth_OpenID_FileStore($store_path);
 	}
 
-	protected function &getConsumer() {
+	/**
+	 * get authenticated user
+	 */
+	protected function getConsumer() {
+
+		$session = new OpenIDSession();
+	
 		/**
 		 * Create a consumer object using the store object created
 		 * earlier.
 		 */
 		$store = $this->getStore();
-		$consumer =& new Auth_OpenID_Consumer($store);
+		$consumer =& new Auth_OpenID_Consumer($store, $session);
 		return $consumer;
 	}
 
+	/**
+	 * gets openid handler url
+	 *
+	 * @return	string
+	 */
 	public static function getReturnTo() {
-		return PAGE_URL.'index.php?page=OpenID';
-	}
-
-	public static function getTrustRoot() {
-		return PAGE_URL.'index.php';
+		return PAGE_URL.'/index.php?page=OpenID';
 	}
 
 	/**
-	 * $_GET['openid_identifier']
-	 * $_GET['policies']
+	 * gets root url
+	 *
+	 * @return	string
+	 */
+	public static function getTrustRoot() {
+		return PAGE_URL;
+	}
+
+	/**
+	 * call api and try authentication
 	 */
 	public function tryAuthentication($openid, $policy_uris = array()) {
 		$consumer = $this->getConsumer();
@@ -72,8 +118,7 @@ class OpenID {
 
 		// No auth request means we can't begin OpenID.
 		if (!$auth_request) {
-			$this->error = ("Authentication error; not a valid OpenID.");
-			return;
+			throw new Exception("Authentication error; not a valid OpenID.");
 		}
 
 		$sreg_request = Auth_OpenID_SRegRequest::build(
@@ -104,11 +149,11 @@ class OpenID {
 			// If the redirect URL can't be built, display an error
 			// message.
 			if (Auth_OpenID::isFailure($redirect_url)) {
-				$this->error = ("Could not redirect to server: " . $redirect_url->message);
-				return;
+				throw new Exception("Could not redirect to server: " . $redirect_url->message);
 			} else {
 				// Send redirect.
 				header("Location: ".$redirect_url);
+				exit;
 			}
 		} else {
 			// Generate form markup and render it.
@@ -118,16 +163,18 @@ class OpenID {
 			// Display an error if the form markup couldn't be generated;
 			// otherwise, render the HTML.
 			if (Auth_OpenID::isFailure($form_html)) {
-				$this->error = ("Could not redirect to server: " . $form_html->message);
-				return;
+				throw new Exception("Could not redirect to server: " . $form_html->message);
 			} else {
-				print $form_html;
+			
+				// used by openid 2, formular and redirect are printed out
+				echo $form_html;
+				exit;
 			}
 		}
 	}
 
 	/**
-	 *
+	 * got answer, save user
 	 */
 	public function finishAuthentication() {
 		$consumer = $this->getConsumer();
@@ -156,8 +203,8 @@ class OpenID {
 				$esc_identity, $esc_identity);
 
 			if ($response->endpoint->canonicalID) {
-				$StringUtil::encodeHTMLd_canonicalID = StringUtil::encodeHTML($response->endpoint->canonicalID);
-				$success .= '  (XRI CanonicalID: '.$StringUtil::encodeHTMLd_canonicalID.') ';
+				$encoded_canonicalID = StringUtil::encodeHTML($response->endpoint->canonicalID);
+				$success .= '  (XRI CanonicalID: '.$encoded_canonicalID.') ';
 			}
 
 			$pape_resp = Auth_OpenID_PAPE_Response::fromSuccessResponse($response);
@@ -167,8 +214,8 @@ class OpenID {
 					$success .= "<p>The following PAPE policies affected the authentication:</p><ul>";
 
 					foreach ($pape_resp->auth_policies as $uri) {
-						$StringUtil::encodeHTMLd_uri = StringUtil::encodeHTML($uri);
-						$success .= "<li><tt>$StringUtil::encodeHTMLd_uri</tt></li>";
+						$encoded_uri = StringUtil::encodeHTML($uri);
+						$success .= "<li><tt>$encoded_uri</tt></li>";
 					}
 
 					$success .= "</ul>";
@@ -203,7 +250,6 @@ class OpenID {
 			));
 		}
 	}
-	
 
 	/**
 	 * is there an existing user with given openid id?
@@ -212,14 +258,13 @@ class OpenID {
 	 * @return	User
 	 */
 	protected function getOpenIDEnabledUser($me) {
-		$sql = "SELECT		utb.userID
-			FROM 		wcf".WCF_N."_user_to_openid utb
-			WHERE		utb.openidID = ".intval($me['id'])."
-			AND		utb.identifier = '".escapeString($me['identifier'])."'";
+		$sql = "SELECT		userID
+			FROM 		wcf".WCF_N."_user_to_openid
+			WHERE		openID = '".sha1($me['identifier'])."'";
 		$row = WCF::getDB()->getFirstRow($sql);
 
 		$user = $row ? new User($row['userID']) : null;
-		return $user->userID ? $user : null;
+		return $user && $user->userID ? $user : null;
 	}
 
 	/**
@@ -231,8 +276,8 @@ class OpenID {
 	 */
 	protected function addOpenIDUser($me, $user) {
 		$sql = "REPLACE INTO	wcf".WCF_N."_user_to_openid
-					(openidID, identifier, userID)
-			VALUES		(".intval($me['id']).", '".escapeString($me['identifier'])."', ".intval($user->userID).")";
+					(openID, userID)
+			VALUES		('".sha1($me['identifier'])."', ".intval($user->userID).")";
 
 		return WCF::getDB()->sendQuery($sql);
 	}
@@ -242,6 +287,13 @@ class OpenID {
 	 */
 	public function finishUser($me) {
 
+		// take default username from hostname
+		if($me['name'] === null) {
+			$host = parse_url($me['identifier'], PHP_URL_HOST)." ID #1";
+			$host = preg_replace("/^www\./", "", $host);
+			$me['name'] = $host;
+		}
+		
 		// openid permissions granted, does an login exist?
 		$user = $this->getOpenIDEnabledUser($me);
 
@@ -257,7 +309,6 @@ class OpenID {
 
 		if($user) {
 
-			die('login temporary disabled');
 			// UserLoginForm should not write cookie, since interfaces only support unhashed password
 			$this->eventObj->useCookies = 0;
 
@@ -306,6 +357,11 @@ class OpenID {
 		$user = null;
 		// get a valid username
 		$username = $this->findUsername($me['name']);
+		
+		// take default email
+		if($me['email'] === null) {
+			$me['email'] = sha1($me['identifier']).'@openid';
+		}
 
 		// create new user
 		if($username) {

@@ -31,11 +31,6 @@ class UserLoginOpenIDListener implements EventListener {
 		if (!MODULE_OPENID) {
 			return;
 		}
-		
-		// TODO: remove DEBUG
-		if(!isset($_GET['openid'])) {
-			return;
-		}
 
 		$this->eventObj = $eventObj;
 		$this->className = $className;

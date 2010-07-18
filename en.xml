@@ -5,4 +5,8 @@
 		<item name="wcf.acp.option.module_openid"><![CDATA[openid]]></item>
 		<item name="wcf.acp.option.module_openid.description"><![CDATA[Allows users to login to the wcf with a openid account.]]></item>
 	</category>
+	<category name="wcf.openid">
+		<item name="wcf.openid.login.description"><![CDATA[Click your OpenID account provider to login<br/>]]></item>
+		<item name="wcf.openid.login"><![CDATA[OpenID]]></item>
+	</category>
 </language>
