@@ -1,5 +1,6 @@
 <script type="text/javascript">
 function openid(elem, msg) {
+	msg = msg || "{lang}wcf.openid.login{/lang}";
 	var x = prompt(msg);
 	if(x) {
 		elem.href = elem.href.replace(/\\1/, x);
@@ -12,7 +13,7 @@ function openid(elem, msg) {
 <div class="formElement">
 	<div class="formField">
 		<fieldset>
-			<legend><img src="{icon}openidS.png{/icon}" alt="" />{lang}wcf.openid.login{/lang}</legend>
+			<legend><img src="{icon}openidS.png{/icon}" alt="" /> {lang}wcf.openid.login{/lang}</legend>
 {*
 			<form method="get" action="{$openid_url}">
 *}
