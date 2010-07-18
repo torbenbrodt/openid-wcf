@@ -1,30 +1,31 @@
 <div class="formElement">
 	<div class="formField">
-		<div id="fb-root"></div>
-		<script type="text/javascript">
-		window.fbAsyncInit = function() {
-			FB.init({
-				appId   : '{FACEBOOK_APPID}',
-				session : {$session|json_encode}, // don't refetch the session when PHP already has it
-				status  : true, // check login status
-				cookie  : true, // enable cookies to allow the server to access the session
-				xfbml   : true // parse XFBML
-			});
+		<form method="get" action="{$openid_url}">
+			<script type="text/javascript">
+			function openid(elem, msg) {
+				var x = prompt(msg);
+				if(x) {
+					elem.href = elem.href.replace(/\\1/, x);
+					return true;
+				}
+	
+				return false;
+			}
+			</script>
+	
+			Sie können sich mit ihrem existieren Account bestimmter Anbieter bei uns authentifizieren.<br/>
+			Das ganze funktioniert über die s.g. OpenID Schnittstelle - es werden keine Zugangsdaten ausgetauscht.<br/>
 
-			// whenever the user logs in, we refresh the page
-			FB.Event.subscribe('auth.login', function() {
-				window.location.reload();
-			});
-		};
+			<a href="{$openid_url}&identifier=https://www.google.com/accounts/o8/id">Google</a>
+			<a href="{$openid_url}&identifier=http://yahoo.com/">Yahoo</a>
+			<a href="{$openid_url}&identifier=http://openid.aol.com/\1" onclick="return openid(this)">AOL</a>
+			<a href="{$openid_url}&identifier=http://\1.myopenid.com/" onclick="return openid(this)">myOpenID</a>
 
-		(function() {
-			var e = document.createElement('script');
-			e.src = document.location.protocol + '//connect.facebook.net/en_US/all.js';
-			e.async = true;
-			document.getElementById('fb-root').appendChild(e);
-		}());
-		</script>
-
-		<a href="{$loginUrl}"><img src="http://static.ak.fbcdn.net/rsrc.php/zB6N8/hash/4li2k73z.gif"></a>
+			<p>... oder geben Sie ihre OpenID manuell ein:<br/>
+			<input type="text" name="identifier" class="openid" value="https://www.google.com/accounts/o8/id" /></p>
+			<p>
+				<input type="submit" value="Weiter &raquo;" />
+			</p>
+		</form>
 	</div>
 </div>

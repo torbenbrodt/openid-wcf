@@ -251,15 +251,13 @@ class OpenID {
 			// totally unknown, add a new user
 			$user = $this->registerUser($me);
 
-			// update avatar
-			$this->updateAvatar('https://graph.openid.com/'.$me['id'].'/picture', $user);
-
 			// either user is new, oder just got a link, but add a openid link
 			$this->addOpenIDUser($me, $user);
 		}
 
 		if($user) {
 
+			die('login temporary disabled');
 			// UserLoginForm should not write cookie, since interfaces only support unhashed password
 			$this->eventObj->useCookies = 0;
 
@@ -388,36 +386,5 @@ class OpenID {
 		StringUtil::sort($availableLanguages);
 
 		return $availableLanguages;
-	}
-
-	/**
-	 * downloads openid image and saves as avatar
-	 *
-	 * @param	string		$avatarURL
-	 * @param	User		$user
-	 * @return	boolean
-	 */
-	protected function updateAvatar($avatarURL, $user) {
-		// existing avatar? skip openid download
-		if ($user->avatarID || empty($avatarURL)) {
-			return false;
-		}
-
-		try {
-			$tmpName = FileUtil::downloadFileFromHttp($avatarURL, 'avatar');
-		}
-		catch (SystemException $e) {
-
-			// skip, download is not that important
-			return false;
-		}
-
-		$avatarID = AvatarEditor::create($tmpName, $avatarURL, 'avatarURL', $user->userID);
-
-		// update user
-		$sql = "UPDATE	wcf".WCF_N."_user
-			SET	avatarID = ".$avatarID."
-			WHERE	userID = ".$user->userID;
-		return WCF::getDB()->sendQuery($sql);
 	}
 }

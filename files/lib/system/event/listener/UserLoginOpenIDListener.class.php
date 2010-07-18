@@ -6,8 +6,8 @@ require_once(WCF_DIR.'lib/data/openid/OpenID.class.php');
  * login will display openid login button and manage all the login stuff
  * 
  * @author	Torben Brodt
- * @url		http://trac.easy-coding.de/trac/wcf/wiki/openid
  * @license	GNU General Public License <http://opensource.org/licenses/gpl-3.0.html>
+ * @package	de.easy-coding.wcf.openid
  */
 class UserLoginOpenIDListener implements EventListener {
 	/**
@@ -31,6 +31,11 @@ class UserLoginOpenIDListener implements EventListener {
 		if (!MODULE_OPENID) {
 			return;
 		}
+		
+		// TODO: remove DEBUG
+		if(!isset($_GET['openid'])) {
+			return;
+		}
 
 		$this->eventObj = $eventObj;
 		$this->className = $className;
@@ -46,7 +51,7 @@ class UserLoginOpenIDListener implements EventListener {
 	public function assignVariables() {
 
 		WCF::getTPL()->assign(array(
-			'openID' => OpenID::getReturnTo(),
+			'openid_url' => OpenID::getReturnTo(),
 		));
 
 		WCF::getTPL()->append('additionalFields', WCF::getTPL()->fetch('openidLogin'));
