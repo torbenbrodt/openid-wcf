@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "http://www.woltlab.com/DTDs/language.dtd">
+<language languagecode="de">
+	<category name="wcf.acp.option">
+		<item name="wcf.acp.option.module_openid"><![CDATA[openid]]></item>
+		<item name="wcf.acp.option.module_openid.description"><![CDATA[Erlaubt den Login mit Hilfe eines openid Accounts.]]></item>
+	</category>
+</language>
