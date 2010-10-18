@@ -1,5 +1,6 @@
 <?php
 require_once(WCF_DIR.'lib/data/user/UserEditor.class.php');
+require_once(WCF_DIR.'lib/util/UserUtil.class.php');
 
 /**
  * embeds the openid system into the wcf
@@ -13,20 +14,10 @@ require_once(WCF_DIR.'lib/data/user/UserEditor.class.php');
 class OpenID {
 
 	/**
-	 * form instance needed for finish action
-	 *
-	 * @var UserLoginForm|OpenIDPage
-	 */
-	protected $eventObj;
-
-	/**
 	 * sets include pathes
 	 * 
-	 * @param	UserLoginForm|OpenIDPage	$eventObj
 	 */
-	public function __construct($eventObj = null) {
-		$this->eventObj = $eventObj;
-
+	public function __construct() {
 		$path_extra = dirname(__FILE__);
 		$path = ini_get('include_path');
 		$path = $path_extra . PATH_SEPARATOR . $path;
@@ -62,6 +53,11 @@ class OpenID {
 		 * Require the PAPE extension module.
 		 */
 		require_once "Auth/OpenID/PAPE.php";
+		
+		/**
+		 * Attribution Exchange
+		 */
+		require_once "Auth/OpenID/AX.php";
 	}
 
 	/**
@@ -110,7 +106,7 @@ class OpenID {
 	/**
 	 * call api and try authentication
 	 */
-	public function tryAuthentication($openid, $policy_uris = array()) {
+	public function tryRegistration($openid, $returnTo, $policy_uris = array()) {
 		$consumer = $this->getConsumer();
 
 		// Begin the OpenID authentication process.
@@ -144,7 +140,7 @@ class OpenID {
 		// For OpenID 1, send a redirect.  For OpenID 2, use a Javascript
 		// form to send a POST request to the server.
 		if ($auth_request->shouldSendRedirect()) {
-			$redirect_url = $auth_request->redirectURL(self::getTrustRoot(), self::getReturnTo());
+			$redirect_url = $auth_request->redirectURL(self::getTrustRoot(), $returnTo);
 
 			// If the redirect URL can't be built, display an error
 			// message.
@@ -158,7 +154,7 @@ class OpenID {
 		} else {
 			// Generate form markup and render it.
 			$form_id = 'openid_message';
-			$form_html = $auth_request->htmlMarkup(self::getTrustRoot(), self::getReturnTo(), false, array('id' => $form_id));
+			$form_html = $auth_request->htmlMarkup(self::getTrustRoot(), $returnTo, false, array('id' => $form_id));
 
 			// Display an error if the form markup couldn't be generated;
 			// otherwise, render the HTML.
@@ -176,12 +172,11 @@ class OpenID {
 	/**
 	 * got answer, save user
 	 */
-	public function finishAuthentication() {
+	public function finishRegistration($return_to) {
 		$consumer = $this->getConsumer();
 
 		// Complete the authentication process using the server's
 		// response.
-		$return_to = self::getReturnTo();
 		$response = $consumer->complete($return_to);
 
 		// Check the response status.
@@ -198,56 +193,111 @@ class OpenID {
 			$openid = $response->getDisplayIdentifier();
 			$esc_identity = StringUtil::encodeHTML($openid);
 
-			$success = sprintf('You have successfully verified ' .
-				'<a href="%s">%s</a> as your identity.',
-				$esc_identity, $esc_identity);
-
 			if ($response->endpoint->canonicalID) {
 				$encoded_canonicalID = StringUtil::encodeHTML($response->endpoint->canonicalID);
-				$success .= '  (XRI CanonicalID: '.$encoded_canonicalID.') ';
-			}
-
-			$pape_resp = Auth_OpenID_PAPE_Response::fromSuccessResponse($response);
-
-			if ($pape_resp) {
-				if ($pape_resp->auth_policies) {
-					$success .= "<p>The following PAPE policies affected the authentication:</p><ul>";
-
-					foreach ($pape_resp->auth_policies as $uri) {
-						$encoded_uri = StringUtil::encodeHTML($uri);
-						$success .= "<li><tt>$encoded_uri</tt></li>";
-					}
-
-					$success .= "</ul>";
-				} else {
-					$success .= "<p>No PAPE policies affected the authentication.</p>";
-				}
-
-				if ($pape_resp->auth_age) {
-					$age = StringUtil::encodeHTML($pape_resp->auth_age);
-					$success .= "<p>The authentication age returned by the " .
-						"server is: <tt>".$age."</tt></p>";
-				}
-
-				if ($pape_resp->nist_auth_level) {
-					$auth_level = StringUtil::encodeHTML($pape_resp->nist_auth_level);
-					$success .= "<p>The NIST auth level returned by the " .
-						"server is: <tt>".$auth_level."</tt></p>";
-				}
-
-			} else {
-				$success .= "<p>No PAPE response was sent by the provider.</p>";
 			}
 			
 			$sreg_resp = Auth_OpenID_SRegResponse::fromSuccessResponse($response);
 			$sreg = $sreg_resp->contents();
 			
 			// save user authentication
-			$this->finishUser(array(
+			$user = $this->finishUser(array(
 				'name' => isset($sreg['nickname']) ? $sreg['nickname'] : null,
 				'email' => isset($sreg['email']) ? $sreg['email'] : null,
 				'identifier' => $openid
 			));
+
+			if($user) {
+				// set cookies
+				UserAuth::getInstance()->storeAccessData($user, $user->username, $user->password);
+				HeaderUtil::setCookie('password', $user->password, TIME_NOW + 365 * 24 * 3600);
+				
+				// change user
+				WCF::getSession()->changeUser($user);
+			}
+		}
+	}
+	
+	public function tryAttributionExchange($openid, $returnTo) {
+		$consumer = $this->getConsumer();
+
+		// Create an authentication request to the OpenID provider
+		$auth = $consumer->begin($openid);
+
+		// Create attribute request object
+		// See http://code.google.com/apis/accounts/docs/OpenID.html#Parameters for parameters
+		// Usage: make($type_uri, $count=1, $required=false, $alias=null)
+		$attribute = array();
+		$attribute[] = Auth_OpenID_AX_AttrInfo::make('http://axschema.org/contact/email', 1, 1, 'email');
+		$attribute[] = Auth_OpenID_AX_AttrInfo::make('http://axschema.org/namePerson/first', 1, 1, 'firstname');
+		$attribute[] = Auth_OpenID_AX_AttrInfo::make('http://axschema.org/namePerson/last', 1, 1, 'lastname');
+
+		// Create AX fetch request
+		$ax = new Auth_OpenID_AX_FetchRequest();
+
+		// Add attributes to AX fetch request
+		foreach($attribute as $attr){
+			$ax->add($attr);
+		}
+
+		// Add AX fetch request to authentication request
+		$auth->addExtension($ax);
+
+		// Redirect to OpenID provider for authentication
+		$url = $auth->redirectURL(self::getTrustRoot(), $returnTo);
+		header('Location: ' . $url);
+		exit;
+	}
+	
+	public function finishAttributionExchange($return_to) {
+		$consumer = $this->getConsumer();
+
+		// Create an authentication request to the OpenID provider
+		$response = $consumer->complete($return_to);
+
+		if ($response->status == Auth_OpenID_SUCCESS) {
+
+			// Get registration informations
+			$ax = new Auth_OpenID_AX_FetchResponse();
+			$obj = $ax->fromSuccessResponse($response);
+
+			// Print me raw
+			$me = array();
+			foreach($obj->data as $key => $val) {
+				if(!isset($val[0])) {
+					continue;
+				}
+				$key = substr($key, strrpos($key, '/') + 1);
+				$me[$key] = $val[0];
+			}
+			
+			$userID = WCF::getUser()->userID;
+			if($userID) {
+				$editor = new UserEditor($userID);
+				
+				$username = '';
+				if(isset($me['first'])) {
+					$username .= ucfirst($me['first']);
+				}
+				if(isset($me['last'])) {
+					$username .= ucfirst($me['last']);
+				}
+				if(!empty($username)) {
+					$username = $this->findUsername($username);
+				}
+				
+				$email = '';
+			
+				// update email address
+				if(isset($me['email']) && UserUtil::isValidEmail($me['email']) && UserUtil::isAvailableEmail($me['email'])) {
+					$email = $me['email'];
+				}
+				
+				if($username || $email) {
+					$editor->update($username, $email);
+					WCF::getSession()->updateUserData();
+				}
+			}
 		}
 	}
 
@@ -306,22 +356,8 @@ class OpenID {
 			// either user is new, oder just got a link, but add a openid link
 			$this->addOpenIDUser($me, $user);
 		}
-
-		if($user) {
-
-			// UserLoginForm should not write cookie, since interfaces only support unhashed password
-			$this->eventObj->useCookies = 0;
-
-			// set cookies
-			UserAuth::getInstance()->storeAccessData($user, $user->username, $user->password);
-			HeaderUtil::setCookie('password', $user->password, TIME_NOW + 365 * 24 * 3600);
-
-			// save cookie and redirect
-			$this->eventObj->user = $user;
-			$this->eventObj->save();
-
-			exit;
-		}
+		
+		return $user;
 	}
 
 	/**
@@ -359,7 +395,7 @@ class OpenID {
 		$username = $this->findUsername($me['name']);
 		
 		// take default email
-		if($me['email'] === null) {
+		if($me['email'] === null || !UserUtil::isValidEmail($me['email'])) {
 			$host = parse_url($me['identifier'], PHP_URL_HOST);
 			$host = preg_replace("/^www\./", "", $host);
 			$me['email'] = md5($me['identifier']).'@openid.'.$host;
