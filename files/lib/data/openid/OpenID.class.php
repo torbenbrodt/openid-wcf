@@ -86,15 +86,6 @@ class OpenID {
 	}
 
 	/**
-	 * gets openid handler url
-	 *
-	 * @return	string
-	 */
-	public static function getReturnTo() {
-		return PAGE_URL.'/index.php?page=OpenID';
-	}
-
-	/**
 	 * gets root url
 	 *
 	 * @return	string
@@ -335,7 +326,7 @@ class OpenID {
 	/**
 	 * save incoming user
 	 */
-	public function finishUser($me) {
+	protected function finishUser($me) {
 
 		// take default username from hostname
 		if($me['name'] === null) {

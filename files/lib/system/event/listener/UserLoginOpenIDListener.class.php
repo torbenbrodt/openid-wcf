@@ -10,19 +10,6 @@ require_once(WCF_DIR.'lib/data/openid/OpenID.class.php');
  * @package	de.easy-coding.wcf.openid
  */
 class UserLoginOpenIDListener implements EventListener {
-	/**
-	 * from eventlistener
-	 *
-	 * @var UserLoginForm
-	 */
-	protected $eventObj;
-	
-	/**
-	 * from eventlistener
-	 *
-	 * @var string
-	 */
-	protected $className;
 
 	/**
 	 * @see EventListener::execute()
@@ -32,24 +19,16 @@ class UserLoginOpenIDListener implements EventListener {
 			return;
 		}
 
-		$this->eventObj = $eventObj;
-		$this->className = $className;
+		switch($className) {
+			case 'UserLoginForm':
+			case 'OpenIDPage':
+				// assignVariables
+				WCF::getTPL()->assign(array(
+					'openid_url' => PAGE_URL.'/index.php?page=OpenID',
+				));
 
-		if(method_exists($this, $eventName)) {
-			$this->$eventName();
-		}
-	}
-
-	/**
-	 * @see UserLoginForm::assignVariables
-	 */
-	public function assignVariables() {
-
-		WCF::getTPL()->assign(array(
-			'openid_url' => OpenID::getReturnTo(),
-		));
-
-		WCF::getTPL()->append('additionalFields', WCF::getTPL()->fetch('openidLogin'));
+				WCF::getTPL()->append('additionalFields', WCF::getTPL()->fetch('openidLogin'));
+			break;
 	}
 }
 ?>

@@ -12,6 +12,11 @@ require_once(WCF_DIR.'lib/data/openid/OpenID.class.php');
  * @package	de.easy-coding.wcf.openid
  */
 class OpenIDPage extends UserLoginForm {
+
+	/**
+	 *
+	 * @var string
+	 */
 	protected $openid_action = '';
 
 	/**
@@ -61,6 +66,7 @@ class OpenIDPage extends UserLoginForm {
 			exit;
 		} else {
 			header('Location: '.$this->url);
+			exit;
 		}
 	}
 	
