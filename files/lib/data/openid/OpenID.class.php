@@ -61,7 +61,7 @@ class OpenID {
 	}
 
 	/**
-	 * returns file store
+	 * returns file store (tempoary store object)
 	 */
 	protected function getStore() {
 		$store_path = FileUtil::getTemporaryFilename('openid_');
@@ -73,7 +73,6 @@ class OpenID {
 	 * get authenticated user
 	 */
 	protected function getConsumer() {
-
 		$session = new OpenIDSession();
 	
 		/**
