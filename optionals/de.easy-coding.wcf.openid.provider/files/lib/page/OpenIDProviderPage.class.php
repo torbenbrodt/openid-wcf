@@ -27,6 +27,10 @@ define('redirect_message', 'Please wait; you are being redirected to <%s>');
  * @package	de.easy-coding.wcf.openid.provider
  */
 class OpenIDServerPage extends OpenIDPage {
+
+	/**
+	 * @var string
+	 */
 	public $action = 'index';
 
 	/**
@@ -38,6 +42,11 @@ class OpenIDServerPage extends OpenIDPage {
 	 * @var Auth_OpenID_Server
 	 */
 	private $server = null;
+	
+	/**
+	 * @var array<sting>
+	 */
+	protected $headers = array();
 
 	/**
 	 * wcf params
@@ -69,17 +78,21 @@ class OpenIDServerPage extends OpenIDPage {
 	public function show() {
 		parent::show();
 
-		header('Cache-Control: no-cache');
-		header('Pragma: no-cache');
+		// prepend default headers
+		$this->headers[] = 'Cache-Control: no-cache';
+		$this->headers[] = 'Pragma: no-cache';
 
 		// call action
-		$resp = $this->{$this->action}();
+		$body = $this->{$this->action}();
+		
+		// append default headers
+		$this->headers[] = 'Connection: close';
 
-		// write response headers
-		list ($headers, $body) = $resp;
-		array_walk($headers, 'header');
-		header('Connection: close');
-		print $body;
+		// write response headers to output
+		array_walk($this->headers, 'header');
+
+		// print output
+		echo $body;
 	}
 
 	/**
@@ -196,23 +209,44 @@ class OpenIDServerPage extends OpenIDPage {
 		$identity = $_GET['user'];
 		
 		$xrdsurl = buildURL('userXrds')."?user=".urlencode($identity);
-		$headers = array('X-XRDS-Location: '.$xrdsurl);
+		$this->headers[] = 'X-XRDS-Location: '.$xrdsurl;
 
-		return array($headers, WCF::getTPL()->display('openIDProviderIdpage'));
+		return WCF::getTPL()->display('openIDProviderIdpage');
 	}
 
 	private function idpXrds() {
-		$headers = array('Content-type: application/xrds+xml');
+		$this->headers[] = 'Content-type: application/xrds+xml';
 		$body = sprintf(idp_xrds_pat, Auth_OpenID_TYPE_2_0_IDP);
 
-		return array($headers, WCF::getTPL()->display('openIDProviderIdpXrds'));
+		return '<?xml version="1.0" encoding="UTF-8"?>
+<xrds:XRDS
+    xmlns:xrds="xri://$xrds"
+    xmlns="xri://$xrd*($v*2.0)">
+  <XRD>
+    <Service priority="0">
+      <Type>%s</Type>
+      <URI>%s</URI>
+    </Service>
+  </XRD>
+</xrds:XRDS>';
 	}
 
 	private function userXrds() {
 		$identity = $_GET['user'];
 		$body = sprintf(user_xrds_pat, Auth_OpenID_TYPE_2_0, Auth_OpenID_TYPE_1_1);
-		$headers = array('Content-type: application/xrds+xml');
-		return array($headers, WCF::getTPL()->display('openIDProviderUserXrds'));
+		$this->headers[] = 'Content-type: application/xrds+xml';
+		return '<?xml version="1.0" encoding="UTF-8"?>
+<xrds:XRDS
+    xmlns:xrds="xri://$xrds"
+    xmlns="xri://$xrd*($v*2.0)">
+  <XRD>
+    <Service priority="0">
+      <Type>%s</Type>
+      <Type>%s</Type>
+      <URI>%s</URI>
+    </Service>
+  </XRD>
+</xrds:XRDS>';
 	}
 
 	private function authCancel($info) {
@@ -279,12 +313,11 @@ class OpenIDServerPage extends OpenIDPage {
 			// Generate a response to send to the user agent.
 			$webresponse =& $server->encodeResponse($response);
 
-			$new_headers = array();
 			foreach ($webresponse->headers as $k => $v) {
-				$new_headers[] = $k.": ".$v;
+				$this->headers[] = $k.": ".$v;
 			}
 
-			return array($new_headers, $webresponse->body);
+			return $webresponse->body;
 		} elseif ($fail_cancels) {
 
 			return $this->authCancel($info);
@@ -302,13 +335,12 @@ class OpenIDServerPage extends OpenIDPage {
 	 * Return an HTTP redirect response
 	 */
 	private function redirect_render($redir_url) {
-		$headers = array(
+		$this->headers = array(
 			http_found,
 			header_content_text,
 			header_connection_close,
 			'Location: ' . $redir_url,
 		);
-		$body = sprintf(redirect_message, $redir_url);
-		return array($headers, $body);
+		return sprintf(redirect_message, $redir_url);
 	}
 }

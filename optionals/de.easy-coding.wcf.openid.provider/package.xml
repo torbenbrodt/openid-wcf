@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE package SYSTEM "http://www.woltlab.com/DTDs/package.dtd">
-<package name="de.easy-coding.wcf.openid.server">
+<package name="de.easy-coding.wcf.openid.provider">
 	<packageInformation>
-		<packagename><![CDATA[OpenID Server]]></packagename>
+		<packagename><![CDATA[OpenID Provider / Server]]></packagename>
 		<packagedescription><![CDATA[This is an OpenID server endpoint. This server is built on the JanRain PHP OpenID library.
 Since OpenID consumer sites will need to directly contact this server, it must be accessible over the Internet (not behind a firewall).]]></packagedescription>
 		<version>1.0.0 Beta 1</version>
