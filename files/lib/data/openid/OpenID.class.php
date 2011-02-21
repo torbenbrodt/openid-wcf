@@ -292,14 +292,29 @@ class OpenID {
 	}
 
 	/**
+	 * is there an existing user with given facebook id?
+	 *
+	 * @param	integer		$userID
+	 * @return	boolean
+	 */
+	public static function hasOpenIDAccount($userID) {
+		$sql = "SELECT		uto.userID
+			FROM 		wcf".WCF_N."_user_to_openid uto
+			WHERE		utb.userID = ".intval($userID);
+		$row = WCF::getDB()->getFirstRow($sql);
+
+		return $row && $row['userID'] > 0;
+	}
+
+	/**
 	 * is there an existing user with given openid id?
 	 *
 	 * @param	array		$me
 	 * @return	User
 	 */
-	protected function getOpenIDEnabledUser($me) {
+	protected static function getOpenIDEnabledUser($me) {
 		$sql = "SELECT		userID
-			FROM 		wcf".WCF_N."_user_to_openid
+			FROM 		wcf".WCF_N."_user_to_openid uto
 			WHERE		openID = '".sha1($me['identifier'])."'";
 		$row = WCF::getDB()->getFirstRow($sql);
 
@@ -335,7 +350,7 @@ class OpenID {
 		}
 		
 		// openid permissions granted, does an login exist?
-		$user = $this->getOpenIDEnabledUser($me);
+		$user = self::getOpenIDEnabledUser($me);
 
 		// openid permissions granted but no login exists
 		if(!$user) {

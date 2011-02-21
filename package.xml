@@ -5,7 +5,7 @@
 		<packagename><![CDATA[OpenID Login]]></packagename>
 		<packagedescription language="de"><![CDATA[Dieses Plugin verbindet openid mit dem WCF. So ist z.B. ein Direktlogin via openid möglich.]]></packagedescription>
 		<packagedescription><![CDATA[This enables all users to login with their openid account.]]></packagedescription>
-		<version>1.0.0</version>
+		<version>1.1.0</version>
 		<date>DATE</date>
 		<plugin>com.woltlab.wcf</plugin>
 		<isunique>1</isunique>
@@ -31,7 +31,12 @@
 		<languages languagecode="de-informal">de-informal.xml</languages>
 		<languages languagecode="en">en.xml</languages>
 	</instructions>
+	<instructions type="update" fromversion="1.0.0">
+		<files>files.tar</files>
+		<eventlistener>eventlistener.xml</eventlistener>
+	</instructions>
 	<instructions type="update" fromversion="1.0.0 RC 1">
 		<files>files.tar</files>
+		<eventlistener>eventlistener.xml</eventlistener>
 	</instructions>
 </package>

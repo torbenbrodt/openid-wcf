@@ -8,5 +8,10 @@
 			<inherit>1</inherit>
 			<listenerclassfile>lib/system/event/listener/UserLoginOpenIDListener.class.php</listenerclassfile>
 		</eventlistener>
+		<eventlistener>
+			<eventclassname>SessionFactory</eventclassname>
+			<eventname>didInit</eventname>
+			<listenerclassfile>lib/system/event/listener/UserLoginOpenIDListener.class.php</listenerclassfile>
+		</eventlistener>
 	</import>
 </data>
