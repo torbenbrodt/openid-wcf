@@ -80,7 +80,7 @@ class OpenID {
 		 * earlier.
 		 */
 		$store = $this->getStore();
-		$consumer =& new Auth_OpenID_Consumer($store, $session);
+		$consumer = new Auth_OpenID_Consumer($store, $session);
 		return $consumer;
 	}
 
