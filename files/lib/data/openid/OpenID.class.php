@@ -267,7 +267,7 @@ class OpenID {
 
 				// only update username, if old username is still hashed
 				$username = '';
-				if(preg_match('/#\d+/', $editor->username)) {
+				if(preg_match('/#\d+$/', $editor->username)) {
 					if(isset($me['first'])) {
 						$username .= ucfirst($me['first']);
 					}
