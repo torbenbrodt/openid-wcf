@@ -33,10 +33,7 @@
 	</instructions>
 	<instructions type="update" fromversion="1.0.0">
 		<files>files.tar</files>
-		<eventlistener>eventlistener.xml</eventlistener>
-	</instructions>
-	<instructions type="update" fromversion="1.0.0 RC 1">
-		<files>files.tar</files>
+		<templates>templates.tar</templates>
 		<eventlistener>eventlistener.xml</eventlistener>
 	</instructions>
 </package>

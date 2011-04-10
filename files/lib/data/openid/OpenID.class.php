@@ -53,7 +53,7 @@ class OpenID {
 		 * Require the PAPE extension module.
 		 */
 		require_once "Auth/OpenID/PAPE.php";
-		
+
 		/**
 		 * Attribution Exchange
 		 */
@@ -74,7 +74,7 @@ class OpenID {
 	 */
 	protected function getConsumer() {
 		$session = new OpenIDSession();
-	
+
 		/**
 		 * Create a consumer object using the store object created
 		 * earlier.
@@ -151,7 +151,7 @@ class OpenID {
 			if (Auth_OpenID::isFailure($form_html)) {
 				throw new Exception("Could not redirect to server: " . $form_html->message);
 			} else {
-			
+
 				// used by openid 2, formular and redirect are printed out
 				echo $form_html;
 				exit;
@@ -186,10 +186,10 @@ class OpenID {
 			if ($response->endpoint->canonicalID) {
 				$encoded_canonicalID = StringUtil::encodeHTML($response->endpoint->canonicalID);
 			}
-			
+
 			$sreg_resp = Auth_OpenID_SRegResponse::fromSuccessResponse($response);
 			$sreg = $sreg_resp->contents();
-			
+
 			// save user authentication
 			$user = $this->finishUser(array(
 				'name' => isset($sreg['nickname']) ? $sreg['nickname'] : null,
@@ -201,13 +201,13 @@ class OpenID {
 				// set cookies
 				UserAuth::getInstance()->storeAccessData($user, $user->username, $user->password);
 				HeaderUtil::setCookie('password', $user->password, TIME_NOW + 365 * 24 * 3600);
-				
+
 				// change user
 				WCF::getSession()->changeUser($user);
 			}
 		}
 	}
-	
+
 	public function tryAttributionExchange($openid, $returnTo) {
 		$consumer = $this->getConsumer();
 
@@ -238,7 +238,7 @@ class OpenID {
 		header('Location: ' . $url);
 		exit;
 	}
-	
+
 	public function finishAttributionExchange($return_to) {
 		$consumer = $this->getConsumer();
 
@@ -260,29 +260,31 @@ class OpenID {
 				$key = substr($key, strrpos($key, '/') + 1);
 				$me[$key] = $val[0];
 			}
-			
+
 			$userID = WCF::getUser()->userID;
 			if($userID) {
-				$editor = new UserEditor($userID);
-				
+				$editor = WCF::getUser()->getEditor();
+
+				// only update username, if old username is still hashed
 				$username = '';
-				if(isset($me['first'])) {
-					$username .= ucfirst($me['first']);
+				if(preg_match('/#\d+/', $editor->username)) {
+					if(isset($me['first'])) {
+						$username .= ucfirst($me['first']);
+					}
+					if(isset($me['last'])) {
+						$username .= ucfirst($me['last']);
+					}
+					if(!empty($username)) {
+						$username = $this->findUsername($username);
+					}
 				}
-				if(isset($me['last'])) {
-					$username .= ucfirst($me['last']);
-				}
-				if(!empty($username)) {
-					$username = $this->findUsername($username);
-				}
-				
-				$email = '';
-			
+
 				// update email address
+				$email = '';
 				if(isset($me['email']) && UserUtil::isValidEmail($me['email']) && UserUtil::isAvailableEmail($me['email'])) {
 					$email = $me['email'];
 				}
-				
+
 				if($username || $email) {
 					$editor->update($username, $email);
 					WCF::getSession()->updateUserData();
@@ -348,7 +350,7 @@ class OpenID {
 			$host = preg_replace("/^www\./", "", $host);
 			$me['name'] = $host;
 		}
-		
+
 		// openid permissions granted, does an login exist?
 		$user = self::getOpenIDEnabledUser($me);
 
@@ -361,7 +363,7 @@ class OpenID {
 			// either user is new, oder just got a link, but add a openid link
 			$this->addOpenIDUser($me, $user);
 		}
-		
+
 		return $user;
 	}
 
@@ -398,7 +400,7 @@ class OpenID {
 		$user = null;
 		// get a valid username
 		$username = $this->findUsername($me['name']);
-		
+
 		// take default email
 		if($me['email'] === null || !UserUtil::isValidEmail($me['email'])) {
 			$host = parse_url($me['identifier'], PHP_URL_HOST);

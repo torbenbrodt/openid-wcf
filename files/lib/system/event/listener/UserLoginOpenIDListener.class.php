@@ -43,6 +43,7 @@ class UserLoginOpenIDListener implements EventListener {
 
 				WCF::getTPL()->append('additionalFields', WCF::getTPL()->fetch('openidLogin'));
 			break;
+		}
 	}
 
 	/**
