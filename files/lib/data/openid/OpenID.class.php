@@ -18,6 +18,12 @@ class OpenID {
 	 * 
 	 */
 	public function __construct() {
+
+		// fix for windows
+		if(!file_exists('/dev/urandom')) {
+			define('Auth_OpenID_RAND_SOURCE', null);
+		}
+
 		$path_extra = dirname(__FILE__);
 		$path = ini_get('include_path');
 		$path = $path_extra . PATH_SEPARATOR . $path;
