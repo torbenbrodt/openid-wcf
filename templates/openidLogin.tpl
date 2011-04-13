@@ -21,12 +21,12 @@ function openid(elem, msg) {
 
 			<a href="{$openid_url}&amp;identifier=https://www.google.com/accounts/o8/id">Google</a>
 			<a href="{$openid_url}&amp;identifier=http://yahoo.com/">Yahoo</a>
-			<a href="{$openid_url}&amp;identifier=http://openid.aol.com/\1" onclick="return openid(this)">AOL</a>
+			<a href="{$openid_url}&amp;identifier=http://openid.aol.com/\\1" onclick="return openid(this)">AOL</a>
 			<a href="{$openid_url}&amp;identifier=http://www.flickr.com/">Flickr</a>
-			<a href="{$openid_url}&amp;identifier=http://\1.myopenid.com/" onclick="return openid(this)">myOpenID</a>
-			<a href="{$openid_url}&amp;identifier=http://technorati.com/people/technorati/\1" onclick="return openid(this)">Technorati</a>
-			<a href="{$openid_url}&amp;identifier=http://\1.wordpress.com/" onclick="return openid(this)">Wordpress</a>
-			<a href="{$openid_url}&amp;identifier=http://\1.blogspot.com/" onclick="return openid(this)">Blogspot</a>
+			<a href="{$openid_url}&amp;identifier=http://\\1.myopenid.com/" onclick="return openid(this)">myOpenID</a>
+			<a href="{$openid_url}&amp;identifier=http://technorati.com/people/technorati/\\1" onclick="return openid(this)">Technorati</a>
+			<a href="{$openid_url}&amp;identifier=http://\\1.wordpress.com/" onclick="return openid(this)">Wordpress</a>
+			<a href="{$openid_url}&amp;identifier=http://\\1.blogspot.com/" onclick="return openid(this)">Blogspot</a>
 {*
 				<p>... oder geben Sie ihre OpenID manuell ein:<br/>
 				<input type="text" name="identifier" class="openid" value="https://www.google.com/accounts/o8/id" /></p>
