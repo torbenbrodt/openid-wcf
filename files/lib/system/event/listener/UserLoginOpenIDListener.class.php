@@ -53,7 +53,10 @@ class UserLoginOpenIDListener implements EventListener {
 		
 		// if the modul deactivated, or the user must no agree the rules, we can leave the event.
 		// if we log out or on the rulesagree page, we also leave the event.
-		if (!defined('MODULE_RULE') || MODULE_RULE == 0 || $session->getUser()->getPermission('admin.general.canIgnoreRules')) return;
+		if (!defined('MODULE_RULE') || MODULE_RULE == 0 || !$session || $session->getUser()->getPermission('admin.general.canIgnoreRules')) {
+			return;
+		}
+
 		if ((isset($_REQUEST['action']) && strtolower($_REQUEST['action']) == 'userlogout') || (isset($_REQUEST['form']) && in_array(strtolower($_REQUEST['form']), self::$ignoreForms)) || (isset($_REQUEST['page']) && in_array(strtolower($_REQUEST['page']), self::$ignorePages))) return;
 		
 		// if the modul activate and the user is openid user he must agree the rules after a change, and the user is not a guest.
