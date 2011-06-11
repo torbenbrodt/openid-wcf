@@ -34,6 +34,15 @@ class UserLoginOpenIDListener implements EventListener {
 				// didInit
 				$this->validateRuleAgree($eventObj->session);
 			break;
+			
+			// registered user links with twitter
+			case 'UserProfileEditForm':
+				// assignVariables
+				if($eventObj->activeCategory == 'settings.general') {
+					OpenID::updateCurrentUser();
+				}
+			break;
+
 			case 'UserLoginForm':
 			case 'OpenIDPage':
 				// assignVariables

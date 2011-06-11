@@ -3,6 +3,11 @@
 <data>
 	<import>
 		<eventlistener>
+			<eventclassname>UserProfileEditForm</eventclassname>
+			<eventname>assignVariables</eventname>
+			<listenerclassfile>lib/system/event/listener/UserLoginOpenIDListener.class.php</listenerclassfile>
+		</eventlistener>
+		<eventlistener>
 			<eventclassname>UserLoginForm</eventclassname>
 			<eventname>assignVariables</eventname>
 			<inherit>1</inherit>
