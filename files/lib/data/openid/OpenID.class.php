@@ -492,11 +492,4 @@ class OpenID {
 
 		return $availableLanguages;
 	}
-
-	/**
-	 * @see UserLoginForm::readData
-	 */
-	public static function updateCurrentUser() {
-		
-	}
 }
